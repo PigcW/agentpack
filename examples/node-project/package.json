@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "build": "tsc",
+    "lint": "eslint ."
+  }
+}

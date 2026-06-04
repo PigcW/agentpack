@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { pathToFileURL } from "node:url";
 import { renderDryRunFix } from "./fix/dry-run.js";
 import { runDoctor } from "./index.js";
 import { renderJsonReport } from "./report/json.js";
@@ -85,7 +86,7 @@ function parseMode(only?: string): RunMode | null {
   return null;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   runCli(process.argv.slice(2), {
     cwd: process.cwd(),
     stdout: (text) => process.stdout.write(text),
