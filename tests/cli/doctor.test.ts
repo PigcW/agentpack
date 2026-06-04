@@ -57,6 +57,22 @@ describe("runDoctor", () => {
 });
 
 describe("runCli", () => {
+  it("returns exit code 0 for top-level help", async () => {
+    const project = await createFixtureProject({});
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+
+    const exitCode = await runCli(["--help"], {
+      cwd: project.root,
+      stdout: (text) => stdout.push(text),
+      stderr: (text) => stderr.push(text),
+    });
+
+    expect(exitCode).toBe(0);
+    expect(stdout.join("")).toContain("Usage: agentpack");
+    expect(stderr.join("")).toBe("");
+  });
+
   it("returns exit code 1 in ci mode when critical findings exist", async () => {
     const project = await createFixtureProject({ ".env": "SECRET=hidden" });
     const writes: string[] = [];

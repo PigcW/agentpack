@@ -63,11 +63,24 @@ export async function runCli(argv: string[], io: CliIO): Promise<number> {
   try {
     await program.parseAsync(argv, { from: "user" });
   } catch (error) {
+    if (isCommanderHelpDisplayed(error)) {
+      return 0;
+    }
+
     io.stderr(error instanceof Error ? `${error.message}\n` : `${String(error)}\n`);
     return 2;
   }
 
   return exitCode;
+}
+
+function isCommanderHelpDisplayed(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const commanderError = error as { code?: unknown; exitCode?: unknown };
+  return commanderError.code === "commander.helpDisplayed" && commanderError.exitCode === 0;
 }
 
 function parseMode(only?: string): RunMode | null {
