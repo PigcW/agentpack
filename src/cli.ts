@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { renderDryRunFix } from "./fix/dry-run.js";
 import { runDoctor } from "./index.js";
 import { renderJsonReport } from "./report/json.js";
 import { renderTerminalReport } from "./report/terminal.js";
@@ -47,15 +48,15 @@ export async function runCli(argv: string[], io: CliIO): Promise<number> {
   program
     .command("fix")
     .option("--dry-run", "Preview repair actions without writing files")
-    .action((options: { dryRun?: boolean }) => {
+    .action(async (options: { dryRun?: boolean }) => {
       if (!options.dryRun) {
         io.stdout("agentpack fix writes are not supported in V0.1. Run agentpack fix --dry-run to preview repair actions.\n");
         exitCode = 2;
         return;
       }
 
-      io.stdout("agentpack fix --dry-run repair preview is not implemented yet.\n");
-      exitCode = 2;
+      const report = await runDoctor({ projectRoot: io.cwd, mode: "full" });
+      io.stdout(renderDryRunFix(report));
     });
 
   try {
