@@ -62,4 +62,34 @@ describe("scanMcpHealth", () => {
 
     expect(findings.map((finding) => finding.ruleId)).toContain("mcp.risky_stdio");
   });
+
+  it("does not leak TOML parser source snippets that contain secret-like values", async () => {
+    const findings = await scan({
+      ".codex/config.toml": [
+        "[mcp_servers.shell]",
+        "command = \"token=SECRET123\"",
+        "invalid = [",
+      ].join("\n"),
+    });
+
+    expect(findings.map((finding) => finding.ruleId)).toContain("mcp.invalid_format");
+    expect(JSON.stringify(findings)).not.toContain("SECRET123");
+  });
+
+  it("parses TOML MCP config for cross-tool conflicts", async () => {
+    const findings = await scan({
+      ".mcp.json": JSON.stringify({
+        mcpServers: {
+          github: { command: "npx", args: ["server-a"] },
+        },
+      }),
+      ".codex/config.toml": [
+        "[mcp_servers.github]",
+        "command = \"npx\"",
+        "args = [\"server-b\"]",
+      ].join("\n"),
+    });
+
+    expect(findings.map((finding) => finding.ruleId)).toContain("mcp.cross_tool_conflict");
+  });
 });

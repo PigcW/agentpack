@@ -64,6 +64,13 @@ async function readEntryText(context: ProjectContext, entryFiles: string[]): Pro
   for (const entryFile of entryFiles) {
     if (context.hasFile(entryFile)) {
       chunks.push(await context.readText(entryFile));
+      continue;
+    }
+
+    if (context.hasDir(entryFile)) {
+      for (const file of context.listFiles().filter((path) => path.startsWith(`${entryFile}/`))) {
+        chunks.push(await context.readText(file));
+      }
     }
   }
 

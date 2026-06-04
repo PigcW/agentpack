@@ -39,7 +39,8 @@ export async function scanMcpHealth(
     } catch (error) {
       findings.push(createFinding("mcp.invalid_format", {
         config_path: configPath,
-        parser_error: error instanceof Error ? error.message : String(error),
+        parser_error: "Invalid MCP config syntax",
+        parser_location: extractParserLocation(error),
       }));
     }
   }
@@ -134,6 +135,21 @@ function findCrossToolConflicts(servers: McpServer[]): Finding[] {
 
 function sanitizeCommand(commandLine: string): string {
   return commandLine.replace(/(token|key|secret|password)=\S+/gi, "$1=<redacted>");
+}
+
+function extractParserLocation(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const lineColumn = message.match(/line \d+ column \d+/i);
+  if (lineColumn) {
+    return lineColumn[0];
+  }
+
+  const tomlLine = message.match(/\n\s*\d+:/);
+  if (tomlLine) {
+    return `line ${tomlLine[0].replace(/\D/g, "")}`;
+  }
+
+  return "unknown";
 }
 
 function createFinding(ruleId: RuleId, evidence: Finding["evidence"]): Finding {

@@ -45,4 +45,19 @@ describe("scanSecurityBoundaries", () => {
 
     expect(findings.map((finding) => finding.ruleId)).toContain("security.secret_not_denied");
   });
+
+  it("warns when sensitive directories are exposed", async () => {
+    const findings = await scan({
+      "AGENTS.md": "Run: npm run dev",
+      "secrets/example.txt": "do not print me",
+    });
+
+    expect(findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        ruleId: "security.sensitive_dir_exposed",
+        evidence: expect.objectContaining({ path: "secrets" }),
+      }),
+    ]));
+    expect(JSON.stringify(findings)).not.toContain("do not print me");
+  });
 });

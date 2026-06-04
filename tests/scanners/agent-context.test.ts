@@ -46,4 +46,22 @@ describe("scanAgentContext", () => {
       "context.no_read_first",
     ]));
   });
+
+  it("reads guidance from .cursor/rules entry directories", async () => {
+    const findings = await scan({
+      ".cursor/rules/agent.md": [
+        "Read first: README.md",
+        "Run: npm run dev",
+        "Test: npm test",
+        "Do not read: .env",
+      ].join("\n"),
+      "README.md": "# App",
+    });
+
+    expect(findings.map((finding) => finding.ruleId)).not.toContain("context.no_entry_file");
+    expect(findings.map((finding) => finding.ruleId)).not.toContain("context.missing_run_cmd");
+    expect(findings.map((finding) => finding.ruleId)).not.toContain("context.missing_test_cmd");
+    expect(findings.map((finding) => finding.ruleId)).not.toContain("context.no_deny_rules");
+    expect(findings.map((finding) => finding.ruleId)).not.toContain("context.no_read_first");
+  });
 });

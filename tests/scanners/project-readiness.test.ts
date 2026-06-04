@@ -38,4 +38,33 @@ describe("scanProjectReadiness", () => {
 
     expect(findings.map((finding) => finding.ruleId)).toContain("project.no_test_cmd");
   });
+
+  it("does not throw when package.json is invalid", async () => {
+    await expect(scan({ "package.json": "{ invalid json" })).resolves.toEqual(expect.arrayContaining([
+      expect.objectContaining({ ruleId: "project.no_test_cmd" }),
+      expect.objectContaining({ ruleId: "project.no_build_lint" }),
+    ]));
+  });
+
+  it("checks large directories even when no manifest exists", async () => {
+    const findings = await scan({
+      "node_modules/example/index.js": "module.exports = {}",
+    });
+
+    expect(findings.map((finding) => finding.ruleId)).toEqual(expect.arrayContaining([
+      "project.no_manifest",
+      "project.large_dir_unexcluded",
+    ]));
+  });
+
+  it("does not report ignored and denied large directories", async () => {
+    const findings = await scan({
+      "package.json": JSON.stringify({ scripts: { test: "vitest" } }),
+      ".gitignore": "node_modules/\n",
+      "AGENTS.md": "Do not read: node_modules",
+      "node_modules/example/index.js": "module.exports = {}",
+    });
+
+    expect(findings.map((finding) => finding.ruleId)).not.toContain("project.large_dir_unexcluded");
+  });
 });
