@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createFixtureProject } from "../helpers/project.js";
 import { runDoctor } from "../../src/index.js";
+import { runCli } from "../../src/cli.js";
 import { renderJsonReport } from "../../src/report/json.js";
 import { renderTerminalReport } from "../../src/report/terminal.js";
 
@@ -50,5 +51,49 @@ describe("runDoctor", () => {
     expect(output).toContain("Status: NOT_READY");
     expect(output).toContain("Security Boundaries");
     expect(output).toContain("Top 3 Actions");
+  });
+});
+
+describe("runCli", () => {
+  it("returns exit code 1 in ci mode when critical findings exist", async () => {
+    const project = await createFixtureProject({ ".env": "SECRET=hidden" });
+    const writes: string[] = [];
+
+    const exitCode = await runCli(["doctor", "--ci"], {
+      cwd: project.root,
+      stdout: (text) => writes.push(text),
+      stderr: (text) => writes.push(text),
+    });
+
+    expect(exitCode).toBe(1);
+    expect(writes.join("")).toContain("NOT_READY");
+  });
+
+  it("returns JSON only for doctor --json", async () => {
+    const project = await createFixtureProject({ "AGENTS.md": "Run: npm run dev\nTest: npm test\nDo not read: .env\nRead first: README.md" });
+    const writes: string[] = [];
+
+    const exitCode = await runCli(["doctor", "--json"], {
+      cwd: project.root,
+      stdout: (text) => writes.push(text),
+      stderr: (text) => writes.push(text),
+    });
+
+    expect(exitCode).toBe(0);
+    expect(() => JSON.parse(writes.join(""))).not.toThrow();
+  });
+
+  it("returns exit code 2 for invalid --only value", async () => {
+    const project = await createFixtureProject({});
+    const writes: string[] = [];
+
+    const exitCode = await runCli(["doctor", "--only", "models"], {
+      cwd: project.root,
+      stdout: (text) => writes.push(text),
+      stderr: (text) => writes.push(text),
+    });
+
+    expect(exitCode).toBe(2);
+    expect(writes.join("")).toContain("Invalid --only value");
   });
 });
