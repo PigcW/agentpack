@@ -1,103 +1,111 @@
-# AgentPack
+# AgentPack Doctor
 
-AgentPack is the project workspace for building AgentPack Doctor.
+AgentPack Doctor is a pre-handoff pitfall checker CLI for AI Coding Agent projects.
 
-AgentPack Doctor is a pre-handoff pitfall checker CLI for AI Coding Agent projects. Before a user hands a project to Codex, Claude Code, Cursor, Windsurf, Gemini CLI, OpenClaw, Harness, or another AI Coding Agent, it checks whether the project has obvious avoidable problems.
+It helps you check whether a project is ready before handing it to Codex, Claude Code, Cursor, Windsurf, Gemini CLI, OpenClaw, Harness, or another AI Coding Agent.
 
-## Current Product
+## Install
 
-Current target:
+During local development:
 
-`AgentPack Doctor V0.1`
+```bash
+npm install
+npm run build
+node dist/cli.js doctor
+```
 
-One-line positioning:
+After package publication, use:
 
-`AgentPack Doctor: AI Coding Agent 接手项目前的防踩坑检查 CLI。`
+```bash
+npx agentpack doctor
+```
 
-## Required Reading Order
+## Commands
 
-Any AI Agent or human developer entering this workspace should read these files first:
+```bash
+agentpack doctor
+agentpack doctor --json
+agentpack doctor --ci
+agentpack doctor --only security
+agentpack doctor --only mcp
+agentpack fix --dry-run
+```
 
-1. `AGENTS.md`
-2. `docs/PRD.md`
-3. `docs/product-spec.md`
-4. `docs/implementation-plan.md`
-5. `docs/dev-log.md`
-6. `docs/decision-log.md`
+## Exit Codes
 
-Do not rely only on chat history. The project files are the source of truth.
+| Code | Meaning |
+|---:|---|
+| 0 | No critical findings |
+| 1 | One or more critical findings in `--ci` mode |
+| 2 | Tool error, invalid arguments, or unsupported command |
 
-## Source Of Truth
+## Privacy
 
-- PRD source of truth: `docs/product-spec.md`
-- PRD entry file: `docs/PRD.md`
-- Implementation route: `docs/implementation-plan.md`
-- Development progress: `docs/dev-log.md`
-- Product and engineering decisions: `docs/decision-log.md`
+AgentPack Doctor V0.1 is local, read-only, and deterministic.
 
-## Development Method
+It does not:
 
-Use spec-driven, controlled AI development.
+- upload file contents
+- make network calls
+- print secret values
+- write files
+- apply fixes
 
-That means:
+Evidence uses paths, config keys, parser locations, and command names. `agentpack fix --dry-run` prints proposed repair actions but never writes files.
 
-- implement according to `docs/implementation-plan.md`
-- execute one task at a time
-- write tests before implementation when the plan requires it
-- run the verification commands in each task
-- update `docs/dev-log.md` after each task
-- update `docs/decision-log.md` when a product or engineering decision changes
+## Categories
 
-If a model wants to add a feature that is not in V0.1, put it in backlog discussion instead of implementing it.
+- Agent Context
+- MCP Health
+- Security Boundaries
+- Local Agent Environment
+- Project Readiness
 
-## V0.1 Scope Lock
+## JSON Output
 
-V0.1 includes:
+```bash
+agentpack doctor --json
+```
 
-- `agentpack doctor`
-- `agentpack doctor --json`
-- `agentpack doctor --ci`
-- `agentpack doctor --only security`
-- `agentpack doctor --only mcp`
-- `agentpack fix --dry-run`
+The JSON output includes stable `rule_id` values, score, status, category summaries, findings, and top actions.
 
-V0.1 excludes:
+Status values:
 
-- real file writes
-- real `agentpack fix`
-- `agentpack init`
-- MCP config sync
-- model recommendation
-- model comparison
-- handoff packages
-- cloud, accounts, dashboard, GUI
+- `ready`
+- `needs_attention`
+- `not_ready`
 
-## Coordination Rules
+Top-level JSON fields include:
 
-After each implementation task, append a short entry to `docs/dev-log.md`:
+- `agentpack_version`
+- `scanned_path`
+- `mode`
+- `readiness_score`
+- `status`
+- `category_scoped`
+- `categories`
+- `findings`
+- `top_actions`
 
-- task completed
-- files changed
-- commands run
-- test result
-- open issues
-- next recommended step
+## Repair Preview
 
-When a key decision is made, append it to `docs/decision-log.md`:
+```bash
+agentpack fix --dry-run
+```
 
-- date
-- decision
-- reason
-- impact
+This prints proposed repair actions and never writes files. Real fixes are outside V0.1.
 
-Do not silently change PRD scope. If implementation discovers a mismatch between plan and reality, record it first.
+Running `agentpack fix` without `--dry-run` exits with code `2`.
 
-## Current Status
+## Project Coordination
 
-As of 2026-06-04:
+This repository is the project workspace for building AgentPack Doctor V0.1.
 
-- PRD exists.
-- Spec synthesis exists.
-- Implementation plan exists.
-- Code has not started yet.
-- Next step is opening this workspace and executing `docs/implementation-plan.md` from Task 0.
+Source-of-truth files for contributors and AI Agents:
+
+- `docs/product-spec.md` is the canonical PRD.
+- `docs/implementation-plan.md` is the canonical implementation route.
+- `docs/dev-log.md` is the canonical progress log.
+- `docs/decision-log.md` is the canonical decision log.
+
+Do not rely only on chat history. Read `AGENTS.md` before changing code.
