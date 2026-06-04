@@ -51,6 +51,8 @@ describe("runDoctor", () => {
     expect(output).toContain("Status: NOT_READY");
     expect(output).toContain("Security Boundaries");
     expect(output).toContain("Top 3 Actions");
+    expect(output).toContain("evidence: .env");
+    expect(output).not.toContain('{"path"');
   });
 });
 

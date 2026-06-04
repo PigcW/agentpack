@@ -7,6 +7,8 @@ import type { Finding } from "../types.js";
 
 const MCP_CONFIG_FILES = [".mcp.json", ".cursor/mcp.json", ".codex/config.toml"];
 const RISKY_COMMAND_PATTERNS = [/\bbash\b/, /\bsh\b/, /\bsudo\b/, /rm\s+-rf/, /curl\s+.*\|\s*sh/];
+const SECRET_ARGUMENT_NAME = String.raw`(?:token|api[-_]?key|secret|password|auth[-_]?token|access[-_]?token|client[-_]?secret)`;
+const SECRET_ARGUMENT_VALUE = String.raw`(?:"[^"]*"|'[^']*'|\S+)`;
 
 interface McpServer {
   name: string;
@@ -134,7 +136,13 @@ function findCrossToolConflicts(servers: McpServer[]): Finding[] {
 }
 
 function sanitizeCommand(commandLine: string): string {
-  return commandLine.replace(/(token|key|secret|password)=\S+/gi, "$1=<redacted>");
+  let sanitized = commandLine;
+  sanitized = sanitized.replace(new RegExp(String.raw`\b(Authorization:\s*Bearer)\s+${SECRET_ARGUMENT_VALUE}`, "gi"), "$1 <redacted>");
+  sanitized = sanitized.replace(new RegExp(String.raw`\b(Bearer)\s+${SECRET_ARGUMENT_VALUE}`, "gi"), "$1 <redacted>");
+  sanitized = sanitized.replace(new RegExp(String.raw`(\b${SECRET_ARGUMENT_NAME}=)${SECRET_ARGUMENT_VALUE}`, "gi"), "$1<redacted>");
+  sanitized = sanitized.replace(new RegExp(String.raw`(^|\s)(--${SECRET_ARGUMENT_NAME})(=)${SECRET_ARGUMENT_VALUE}`, "gi"), "$1$2$3<redacted>");
+  sanitized = sanitized.replace(new RegExp(String.raw`(^|\s)(--${SECRET_ARGUMENT_NAME})(\s+)${SECRET_ARGUMENT_VALUE}`, "gi"), "$1$2$3<redacted>");
+  return sanitized;
 }
 
 function extractParserLocation(error: unknown): string {
