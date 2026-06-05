@@ -1,2 +1,16 @@
 node_modules/
 dist/
+
+# Local agent/spec workflow files
+AGENTS.md
+.claude/
+.codex/
+.cursor/
+.gemini/
+openspec/
+docs/PRD.md
+docs/product-spec.md
+docs/spec-synthesis.md
+docs/implementation-plan.md
+docs/dev-log.md
+docs/decision-log.md
