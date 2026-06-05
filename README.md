@@ -17,7 +17,7 @@ node dist/cli.js doctor
 After package publication, use:
 
 ```bash
-npx agentpack doctor
+npx @pigcw/agentpack doctor
 ```
 
 ## Commands

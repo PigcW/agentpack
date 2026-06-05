@@ -1,15 +1,19 @@
 {
-  "name": "agentpack",
+  "name": "@pigcw/agentpack",
   "version": "0.1.0",
   "description": "Pre-handoff pitfall checker CLI for AI Coding Agent projects.",
   "type": "module",
   "bin": {
-    "agentpack": "./dist/cli.js"
+    "agentpack": "dist/cli.js"
   },
   "files": [
     "dist",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli.ts",
