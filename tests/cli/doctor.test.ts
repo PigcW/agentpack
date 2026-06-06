@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { pathToFileURL } from "node:url";
 import { createFixtureProject } from "../helpers/project.js";
 import { runDoctor } from "../../src/index.js";
-import { runCli } from "../../src/cli.js";
+import { isDirectCliExecution, runCli } from "../../src/cli.js";
 import { renderJsonReport } from "../../src/report/json.js";
 import { renderTerminalReport } from "../../src/report/terminal.js";
 
@@ -47,7 +48,7 @@ describe("runDoctor", () => {
     const report = await runDoctor({ projectRoot: project.root, mode: "security" });
     const output = renderTerminalReport(report);
 
-    expect(output).toContain("agentpack doctor v0.1.0");
+    expect(output).toContain("agentpack doctor v0.1.1");
     expect(output).toContain("Status: NOT_READY");
     expect(output).toContain("Security Boundaries");
     expect(output).toContain("Top 3 Actions");
@@ -57,6 +58,22 @@ describe("runDoctor", () => {
 });
 
 describe("runCli", () => {
+  it("recognizes npm .bin symlink as direct cli execution", async () => {
+    const project = await createFixtureProject({
+      "package/dist/cli.js": "",
+      "package/.bin/agentpack": "",
+    });
+
+    const distPath = `${project.root}/package/dist/cli.js`;
+    const binPath = `${project.root}/package/.bin/agentpack`;
+    await import("node:fs/promises").then(async ({ rm, symlink }) => {
+      await rm(binPath);
+      await symlink("../dist/cli.js", binPath);
+    });
+
+    expect(isDirectCliExecution(pathToFileURL(distPath).href, binPath)).toBe(true);
+  });
+
   it("returns exit code 0 for top-level help", async () => {
     const project = await createFixtureProject({});
     const stdout: string[] = [];

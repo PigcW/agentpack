@@ -1,6 +1,6 @@
 {
   "name": "@pigcw/agentpack",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pre-handoff pitfall checker CLI for AI Coding Agent projects.",
   "type": "module",
   "bin": {

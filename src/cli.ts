@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { pathToFileURL } from "node:url";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { renderDryRunFix } from "./fix/dry-run.js";
 import { runDoctor } from "./index.js";
 import { renderJsonReport } from "./report/json.js";
@@ -99,7 +100,15 @@ function parseMode(only?: string): RunMode | null {
   return null;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+export function isDirectCliExecution(moduleUrl: string, argvPath: string | undefined): boolean {
+  if (!argvPath) {
+    return false;
+  }
+
+  return realpathSync(fileURLToPath(moduleUrl)) === realpathSync(argvPath);
+}
+
+if (isDirectCliExecution(import.meta.url, process.argv[1])) {
   runCli(process.argv.slice(2), {
     cwd: process.cwd(),
     stdout: (text) => process.stdout.write(text),

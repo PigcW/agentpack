@@ -8,7 +8,7 @@ import { scanProjectReadiness } from "./scanners/project-readiness.js";
 import { scanSecurityBoundaries } from "./scanners/security.js";
 import type { Category, CategorySummary, DoctorReport, Finding, ScanOptions } from "./types.js";
 
-export const AGENTPACK_VERSION = "0.1.0";
+export const AGENTPACK_VERSION = "0.1.1";
 
 export async function runDoctor(options: ScanOptions): Promise<DoctorReport> {
   const context = await createProjectContext(options.projectRoot);
