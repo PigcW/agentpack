@@ -1,79 +1,172 @@
 # AgentPack Doctor
 
-AgentPack Doctor is a pre-handoff pitfall checker CLI for AI Coding Agent projects.
+[中文文档](./README.zh-CN.md)
 
-It helps you check whether a project is ready before handing it to Codex, Claude Code, Cursor, Windsurf, Gemini CLI, OpenClaw, Harness, or another AI Coding Agent.
+AgentPack Doctor is a local CLI that checks whether a project is ready to be handed to AI coding agents such as Codex, Claude Code, Cursor, Gemini CLI, OpenClaw, Harness, and similar tools.
+
+It focuses on the problems that usually waste time before an agent starts coding: missing project context, unsafe secret boundaries, broken MCP configuration, unclear run/test commands, and generated directories that are easy for agents to read by accident.
 
 ## Install
 
-During local development:
-
-```bash
-npm install
-npm run build
-node dist/cli.js doctor
-```
-
-After package publication, use:
+Run it directly with npx:
 
 ```bash
 npx @pigcw/agentpack doctor
 ```
 
+Or install it in a project:
+
+```bash
+npm install -D @pigcw/agentpack
+npx agentpack doctor
+```
+
+Requirements:
+
+- Node.js 20 or newer
+
+## Quick Start
+
+Run the full project readiness check from the root of your project:
+
+```bash
+npx @pigcw/agentpack doctor
+```
+
+Use JSON output when another tool, CI job, or agent needs to consume the report:
+
+```bash
+npx @pigcw/agentpack doctor --json
+```
+
+Fail CI only when critical findings exist:
+
+```bash
+npx @pigcw/agentpack doctor --ci
+```
+
+Preview suggested repairs without writing files:
+
+```bash
+npx @pigcw/agentpack fix --dry-run
+```
+
 ## Commands
 
-```bash
-agentpack doctor
-agentpack doctor --json
-agentpack doctor --ci
-agentpack doctor --only security
-agentpack doctor --only mcp
-agentpack fix --dry-run
-```
+| Command | What it does |
+| --- | --- |
+| `agentpack doctor` | Runs the full readiness check. |
+| `agentpack doctor --json` | Prints valid JSON only. |
+| `agentpack doctor --ci` | Uses CI-friendly exit codes. |
+| `agentpack doctor --only security` | Runs only security boundary checks. |
+| `agentpack doctor --only mcp` | Runs only MCP configuration checks. |
+| `agentpack fix --dry-run` | Shows repair previews without writing files. |
 
-## Exit Codes
+Real file-writing fixes are not enabled in v0.1.
 
-| Code | Meaning |
-|---:|---|
-| 0 | No critical findings |
-| 1 | One or more critical findings in `--ci` mode |
-| 2 | Tool error, invalid arguments, or unsupported command |
+## What It Checks
 
-## Privacy
+### Agent Context
 
-AgentPack Doctor V0.1 is local, read-only, and deterministic.
+Checks whether the project gives AI agents a clear entry point.
 
-It does not:
+It looks for:
 
-- upload file contents
-- make network calls
-- print secret values
-- write files
-- apply fixes
+- `AGENTS.md`
+- `CLAUDE.md`
+- `.cursorrules`
+- `.cursor/rules`
+- `README.md`
+- documented run/start commands
+- documented test commands
+- do-not-read or boundary rules
+- read-first guidance
 
-Evidence uses paths, config keys, parser locations, and command names. `agentpack fix --dry-run` prints proposed repair actions but never writes files.
+### MCP Health
 
-## Categories
+Checks common MCP configuration problems across:
 
-- Agent Context
-- MCP Health
-- Security Boundaries
-- Local Agent Environment
-- Project Readiness
+- `.mcp.json`
+- `.cursor/mcp.json`
+- `.codex/config.toml`
 
-## JSON Output
+It detects:
 
-```bash
-agentpack doctor --json
-```
+- invalid JSON or TOML syntax
+- duplicate server names in one config
+- same MCP server name with different definitions across tools
+- commands that do not exist locally
+- risky stdio command patterns such as shell wrappers, `sudo`, `rm -rf`, or `curl | sh`
 
-The JSON output includes stable `rule_id` values, score, status, category summaries, findings, and top actions.
+Secret-looking command arguments are redacted in output.
+
+### Security Boundaries
+
+Checks whether sensitive files and folders are excluded from both Git and agent context.
+
+It currently looks for common sensitive files such as:
+
+- `.env`
+- `.env.local`
+- `.env.production`
+- `id_rsa`
+- `id_ed25519`
+- `credentials.json`
+- `secrets.json`
+
+It also checks sensitive directories such as:
+
+- `secrets`
+- `private`
+- `13pwd`
+
+### Local Agent Environment
+
+Reports whether common local agent tools appear to be available:
+
+- Codex CLI
+- Claude Code CLI
+- Gemini CLI
+- Cursor MCP config
+- OpenClaw or Harness
+
+These are informational checks. They help you understand the local handoff environment.
+
+### Project Readiness
+
+Checks whether the project has a recognizable shape and basic automation.
+
+It looks for:
+
+- common manifests such as `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, `Makefile`, and `pom.xml`
+- test commands
+- build or lint commands
+- generated or large directories such as `node_modules`, `dist`, `build`, `target`, and `.venv` that are not excluded from Git and agent rules
+
+## Output
+
+The terminal report includes:
+
+- readiness score
+- status
+- category summaries
+- findings with evidence
+- recommended actions
+- top 3 actions
 
 Status values:
 
-- `ready`
-- `needs_attention`
-- `not_ready`
+| Status | Meaning |
+| --- | --- |
+| `ready` | No blocking problems found. |
+| `needs_attention` | Some warnings or cleanup items exist. |
+| `not_ready` | Critical issues should be fixed before agent handoff. |
+
+JSON output includes stable fields for automation:
+
+```bash
+npx @pigcw/agentpack doctor --json
+```
 
 Top-level JSON fields include:
 
@@ -87,25 +180,61 @@ Top-level JSON fields include:
 - `findings`
 - `top_actions`
 
-## Repair Preview
+## Exit Codes
+
+| Code | Meaning |
+| ---: | --- |
+| `0` | Command completed. In `--ci` mode, no critical findings were found. |
+| `1` | `--ci` mode found one or more critical findings. |
+| `2` | Invalid arguments, unsupported command, or tool error. |
+
+## Privacy
+
+AgentPack Doctor v0.1 is local, read-only, and deterministic.
+
+It does not:
+
+- upload file contents
+- make network calls during scans
+- print secret values
+- write files
+- apply fixes
+
+Evidence is limited to paths, config keys, parser locations, command names, and redacted command fragments.
+
+## Typical Workflow
+
+Use AgentPack Doctor before asking an AI coding agent to work on a project:
 
 ```bash
-agentpack fix --dry-run
+npx @pigcw/agentpack doctor
 ```
 
-This prints proposed repair actions and never writes files. Real fixes are outside V0.1.
+Then fix the top findings, especially:
 
-Running `agentpack fix` without `--dry-run` exits with code `2`.
+- create or improve `AGENTS.md`
+- add run/test instructions
+- add do-not-read rules for secrets
+- add missing ignore rules
+- clean up MCP configuration conflicts
+- exclude generated directories from agent context
 
-## Project Coordination
+Run the check again before handing the project to an agent.
 
-This repository is the project workspace for building AgentPack Doctor V0.1.
+## Development
 
-Source-of-truth files for contributors and AI Agents:
+```bash
+npm install
+npm run build
+npm test
+```
 
-- `docs/product-spec.md` is the canonical PRD.
-- `docs/implementation-plan.md` is the canonical implementation route.
-- `docs/dev-log.md` is the canonical progress log.
-- `docs/decision-log.md` is the canonical decision log.
+Run the CLI from source:
 
-Do not rely only on chat history. Read `AGENTS.md` before changing code.
+```bash
+npm run dev -- doctor
+```
+
+## License
+
+MIT
